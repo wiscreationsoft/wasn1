@@ -53,7 +53,7 @@
 
 ---
 
-## 2: The Three Pillars of ASN.1
+## 2. The Three Pillars of ASN.1
 
 ### 2.1 Types
 
@@ -92,7 +92,7 @@ Motherboard-Component ::= SEQUENCE {
 }
 ```
 
-Telecom Example:
+**Telecom Example(5G Handover Component):**
 
 ```asn1
 HandoverCommand ::= SEQUENCE {
@@ -105,6 +105,9 @@ HandoverCommand ::= SEQUENCE {
 ### 2.2 Values
 
 Values are concrete protocol messages — instances built from type blueprints.
+
+**Computer Manufacturing Analogy:**
+Values are physical components manufactured from blueprints:
 
 ```asn1
 corsairRAM RAM-Component ::= {
@@ -127,7 +130,7 @@ asusBoard Motherboard-Component ::= {
 }
 ```
 
-Telecom Value:
+**Telecom Value:**
 
 ```asn1
 liveHandover HandoverCommand ::= {
@@ -139,23 +142,74 @@ liveHandover HandoverCommand ::= {
 
 ### 2.3 Modules
 
-Modules are containers that organize related definitions, like engineering manuals.
+Modules are container units that organize related protocol definitions - like specialized
+engineering manuals for different telecom subsystems. Just as a 5G network separates
+radio control (RRC) from core network signaling (NGAP), modules compartmentalize
+specifications to avoid conflicts and enable team collaboration.
+
+**Computer Manufacturing Analogy:**
+
+> "Think of modules as computer specification documents (e.g., 'Dell Precision Workstation
+Technical Manual'). Each manual defines:
+1. Compatible components (structured types)
+2. Their properties (primitive types)
+3. Assembly rules (imports/exports as needed)
 
 ```asn1
 High-Performance-Workstation DEFINITIONS ::= BEGIN
-  ...
+  CPU-Component ::= SEQUENCE { -- STRUCTURED TYPE
+    brand UTF8String, -- Manufacturer
+    frequency REAL (1.0..6.0), -- Constrained REAL property
+    cores INTEGER (2..128) -- Core count
+  }
+
+  RAM-Component ::= SEQUENCE { -- STRUCTURED TYPE
+    brand UTF8String, -- Manufacturer
+    size INTEGER(1..256), -- RAM size 1-256 GB
+    type ENUMERATED {DDR4, DDR5}, -- Constrained ENUMERATED p
+    roperty
+    speed INTEGER (1600..6400) -- MHz constraint
+  }
+
+  Motherboard-Component ::= SEQUENCE { -- STRUCTURED TYPE
+    model UTF8String,
+    cpuSocket CPU-Component, -- Nested component
+    ramSlots SEQUENCE SIZE (4) OF RAM-Component -- Array
+  }
+
+  -- RAM COMPONENT INSTANCES
+  corsairRAM RAM-Component ::= { -- VALUE
+    brand = "Corsair Dominator",
+    size = 64, -- Valid 1-256 GB
+    type = DDR5,
+    speed = 5600 -- Valid 1600-6400 MHz
+  }
+
+  -- CPU COMPONENT INSTANCE
+  ryzenCpu CPU-Component ::= { -- VALUE
+    brand = "AMD Ryzen 9 7950X",
+    frequency = 5.7, -- Valid 1.0-6.0 GHz
+    cores = 16 -- Valid 2-128 cores
+  }
+    -- MOTHERBOARD WITH INSTALLED COMPONENTS
+  asusBoard Motherboard-Component ::= { -- VALUE
+    model = "ASUS ProArt X670E",
+    cpuSocket = ryzenCpu, -- Component instance
+    ramSlots = { corsair32gb, corsair32gb } -- RAM instances
+  }
 END
 ```
 
-5G Module Example:
+An example of how 3GPP defines separate modules for RRC (radio components), NAS
+(security components), and NGAP (core network assembly):
 
 ```asn1
 5G-Radio-Components DEFINITIONS ::= BEGIN
-  EXPORTS Antenna-Array, FrequencyBand;
-  IMPORTS EncryptionKey FROM Security-Components;
-
-  Antenna-Array ::= SEQUENCE { ... }
-  FrequencyBand ::= INTEGER (1..100)
+    EXPORTS Antenna-Array, FrequencyBand; -- Public components
+    IMPORTS EncryptionKey FROM Security-Components; -- Cross-module part
+    -- Component definitions
+    Antenna-Array ::= SEQUENCE { ... } -- Structured type
+    FrequencyBand ::= INTEGER (1..100) -- Primitive property
 END
 ```
 
@@ -185,7 +239,7 @@ print(decoded_sms.message)  # Output: "Hello"
 
 ---
 
-## 3: Mastering ASN.1 Types
+## 3. Mastering ASN.1 Types
 
 ### 3.1 Primitive Types (Atoms)
 
@@ -238,7 +292,7 @@ of Identifier octets, Length octets, Contents octets and End-of-content Octets (
 **Length Octet**:
 Value always occupies 1 byte → `0x01`
 
-**Contents Octets**: 
+**Contents Octets**:
 `TRUE` = `0xFF` (any non-zero byte accepted, but 0xFF is standard)
 
 **→ Full BER Encoding**: `01 01 FF`
@@ -246,6 +300,7 @@ Value always occupies 1 byte → `0x01`
 **Master encoding hands-on**: Follow the steps below to [try it yourself](https://wiscreationsoft.com/apps/asn1codec) (click 'Login' to
 start)
 
+![3.1.1](/docs/images/3.1.1.png)
 ---
 
 #### 3.1.2 INTEGER Type
@@ -290,7 +345,7 @@ END
 **Length Octet**:
 Value always occupies 1 byte → `0x01`
 
-**Contents Octets**: 
+**Contents Octets**:
 `TRUE` = `0x1E` (hex for decimal 30)
 
 **→ Full BER Encoding**: `02 01 1E`
@@ -298,11 +353,12 @@ Value always occupies 1 byte → `0x01`
 **Master encoding hands-on**: Follow the steps below to [try it yourself](https://wiscreationsoft.com/apps/asn1codec) (click 'Login' to
 start)
 
+![3.1.2](/docs/images/3.1.2.png)
 ---
 
 #### 3.1.3 BIT STRING Type
 
-BIT STRING is a primitive ASN.1 type with universal tag `[UNIVERSAL 3]`. It represents 
+BIT STRING is a primitive ASN.1 type with universal tag `[UNIVERSAL 3]`. It represents
 binary data as a sequence of bits (0s and 1s). Useful for flags, configurations, and compact signaling.
 
 **Basic Examples of Type Definition:**
@@ -365,7 +421,8 @@ value padded to 8 bits), where 'length' denotes actual bit count.
 
 **Master encoding hands-on**: Follow the steps below to [try it yourself](https://wiscreationsoft.com/apps/asn1codec) (click 'Login' to
 start)
-   
+
+![3.1.3](/docs/images/3.1.3.png)
 ---
 
 
@@ -412,15 +469,15 @@ END
 
 **Length Octet**: Total contents length = 2 octets → `0x02`
 
-**Content Octets**: 
+**Content Octets**:
 `0xA1 0xA2` → `0xA1A2`
 
 
 **→ Full BER Encoding**: `04 02 A1 B2`
 
-**Master encoding hands-on**: Follow the steps below to [try it yourself](https://wiscreationsoft.com/apps/asn1codec) (click 'Login' to
-start)
+**Master encoding hands-on**: Follow the steps below to [try it yourself](https://wiscreationsoft.com/apps/asn1codec) (click 'Login' to start)
 
+![3.1.4](/docs/images/3.1.4.png)
 ---
 #### 3.1.5 OBJECT IDENTIFIER Type
 OBJECT IDENTIFIER (OID) is a primitive ASN.1 type with universal tag `[UNIVERSAL 6]`. It represents a globally unique ID in a hierarchical namespace tree.
@@ -433,7 +490,7 @@ ObjectIdentifierExample DEFINITIONS ::= BEGIN
 END
 ```
 
-**OID Tree Example:** 
+**OID Tree Example:**
 OIDs form a hierarchical namespace
 ```text
 1 - ISO
@@ -475,7 +532,7 @@ END
 
 **Length Octet**: Calculate encoded value length = 5 octets → `0x05`
 
-**Content Octets**: 
+**Content Octets**:
 1. First two arcs: `1.3` → 1*40 + 3 = 43 → `0x2B`
 2. Subarcs: `6` → `0x06`  `1` → `0x01` `4` → `0x04` `1` → `0x01`
 3. Full Value: 2B 06 01 04 01
@@ -485,49 +542,97 @@ END
 **Master encoding hands-on**: Follow the steps below to [try it yourself](https://wiscreationsoft.com/apps/asn1codec) (click 'Login' to
 start)
 
+![3.1.5](/docs/images/3.1.5.png)
 ---
 
 ### 3.2 Structured Types
 
-#### SEQUENCE
+#### 3.2.1 SEQUENCE
+
+SEQUENCE is a structured ASN.1 type with universal tag `[UNIVERSAL 16]`. It represents an ordered collection of heterogeneous elements. Think of it like a C `struct` — field order matters.
+
+**Basic Examples of Type Definition:**
 
 ```asn1
-HandoverCommand ::= SEQUENCE {
-  transactionId  INTEGER (0..255),
-  targetCell     OCTET STRING (SIZE(6)),
-  algorithm      OBJECT IDENTIFIER,
-  parameters     SEQUENCE {
-    encryptionKey  OCTET STRING (SIZE(32)),
-    integrityKey   OCTET STRING (SIZE(32))
-  },
-  urgent         BOOLEAN DEFAULT FALSE
-}
+SequenceExample DEFINITIONS ::= BEGIN
+  HandoverCommand ::= SEQUENCE {
+    transactionId  INTEGER (0..255),
+    targetCell     OCTET STRING (SIZE(6)),
+    algorithm      OBJECT IDENTIFIER,
+    parameters     SEQUENCE {
+      encryptionKey  OCTET STRING (SIZE(32)),
+      integrityKey   OCTET STRING (SIZE(32))
+    },
+    urgent         BOOLEAN DEFAULT FALSE
+  }
+END
 ```
 
-#### CHOICE
+**Step-by-Step Encoding Example Using **`handoverCmd`** Value:**
 
-```asn1
-NetworkElement ::= CHOICE {
-  enb  ENB-Parameters,
-  gnb  GNB-Parameters,
-  amf  AMF-Config
+```JSON
+{
+  "transactionId": 42,
+  "targetCell": "A1B2C3D4E5F6",
+  "algorithm": "0.4.0.127.0.7.1.1.4",
+  "parameters": {
+    "encryptionKey": "4F3C2B7E151628AED2A6ABF7158809CF4F3C2B7E151628AED2A6BF7158809CF4",
+    "integrityKey": "8E9F0A1B2C3D4E5F60718293A4B5C6D7E8F901A2B3C4D5E6F785C6D7E8F901A0"
+  }
 }
+
+```
+**Identifier**: `0x30` (UNIVERSAL 16 = SEQUENCE))
+1. Class: SEQUENCE) is Universal type = 00b
+2. P/C: SEQUENCE) is Constructed type = 1b
+3. Tag: SEQUENCE) type’s universal tag is 16 = 10000b
+4. Identifier Octet: 00 1 10000b (`0x30`)
+<table>
+  <tr> <td>8</td> <td>7</td> <td>6</td> <td>5</td> <td>4</td> <td>3</td> <td>2</td> <td>1</td> </tr>
+  <tr> <td colspan="2">Class<br>0 0 : Universal<br>0 1 : Application <br>1 0 : Context Specific<br> 1 1 : Private</td> <td>P/C<br>0: Primitive<br>1: Constructed</td>  <td colspan="5">Tag Number</td> </tr>
+  <tr> <td>0</td> <td>0</td> <td>1</td> <td>1</td> <td>0</td> <td>0</td> <td>0</td> <td>0</td> </tr>
+</table>
+
+**Length Octet**: Sum of encoded fields: 3 (INT) + 8 (OCTSTR) + 10 (OID) + 70 (nested SEQ) + 3 (bool)
+= 94 bytes → `0x5e`
+
+**Content Octets**:
+1. transactionId (42): 02 01 2A
+2. targetCell: 04 06 A1 B2 C3 D4 E5 F6
+3. algorithm (OID): 06 08 04 00 7F 00 07 01 01 04
+4. parameters (nested SEQUENCE):
+```text
+30 44 -- Nested SEQUENCE tag/length (64 bytes)
+04 20 -- encryptionKey
+4F3C...09CF
+04 20 -- integrityKey
+8E9F...F78
+```
+5. Urgent: 01 01 00
+
+
+**→ Full BER Encoding**:
+```text
+30 5e -- SEQUENCE tag/length
+   02 01 2a -- "transactionId"
+   04 06 a1 b2 c3 d4 e5 f6 -- "targetCell"
+   06 08 04 00 7f 00 07 01 01 04 -- "algorithm"
+   30 44 -- "parameters"(Nested SEQUENCE)
+      04 20 4f 3c 2b 7e 15 16 28 ae d2 a6 ab f7 15 88 09 cf
+            4f 3c 2b 7e 15 16 28 ae d2 a6 bf 71 58 80 9c f4 -- "encryptionKey"
+      04 20 8e 9f 0a 1b 2c 3d 4e 5f 60 71 82 93 a4 b5 c6 d7
+            e8 f9 01 a2 b3 c4 d5 e6 f7 85 c6 d7 e8 f9 01 a0 -- "integrityKey"
+   01 01 00 -- "urgent": default False
 ```
 
-#### ENUMERATED
+**Master encoding hands-on**: Follow the steps below to [try it yourself](https://wiscreationsoft.com/apps/asn1codec) (click 'Login' to start)
 
-```asn1
-HandoverStatus ::= ENUMERATED {
-  prepared,
-  inProgress,
-  completed,
-  failed
-}
-```
+![3.2.1](/docs/images/3.2.1.png)
+
 
 ---
 
-## Chapter 4: The Power of Values
+## 4. The Power of Values
 
 ### 4.1 Value Assignment Syntax
 
@@ -562,7 +667,7 @@ siteA-Cell3 CellConfig ::= {
 
 ---
 
-## Chapter 5: Encoding Rules - The Wire Format
+## 5. Encoding Rules - The Wire Format
 
 ### 5.1 BER vs. PER in Telecom
 
@@ -598,12 +703,13 @@ Encodes in 1 byte (vs. 8+ in BER)
 
 ### X.690 Series (Encoding)
 
-| Standard | Encoding      | Primary Use           |
-| -------- | ------------- | --------------------- |
-| X.690    | BER, CER, DER | Digital certificates  |
-| X.691    | PER           | 4G/5G radio signaling |
-| X.692    | OER           | Aviation/financial    |
-| X.693    | XER           | Configuration files   |
-
-> **Telecom Insight:** 5G NR uses X.691 PER exclusively for RRC/NAS signaling, achieving 60% size reduction vs. 4G's BER.
-
+| Standard | Encoding      | Primary Use                   |
+| -------- | ------------- | ----------------------------- |
+| X.690    | BER, CER, DER | BER, CER, DER Encoding Rules  |
+| X.691    | PER           | Packed Encoding Rules         |
+| X.692    | ECN           | Encoding Control Notation     |
+| X.693    | XER           | XML Encoding Rules            |
+| X.694    | XML           | XML schema definitions        |
+| X.695    | PER           | Registration and application of PER|
+| X.696    | OER           | Octet Encoding Rules          |
+| X.697    | JER           | JSON Encoding Rules           |
